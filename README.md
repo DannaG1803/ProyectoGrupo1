@@ -168,6 +168,24 @@ new Chart(document.getElementById("grafica1"), {
 {% endblock %}
 ```
 
+## Dimensión poblacional (Integrante 1)
+
+Pregunta de análisis: *¿Cómo está compuesta y distribuida la población analizada según sus principales características?*
+
+Archivos: `routes/poblacional.py` (cálculos con pandas y textos del análisis) y
+`templates/dimensiones/poblacional.html` (tablero). Se ve en `/dimension/poblacional`.
+
+| Elemento | Contenido |
+|---|---|
+| Filtros | Año de reporte e institución |
+| Indicadores | Total de registros, edad promedio de la madre y % de madres en régimen subsidiado |
+| Visualizaciones | Dona de régimen de seguridad, barras de nivel educativo de la madre e histograma de edad de la madre |
+| Perfil general | Tabla con el grupo predominante y el minoritario de sexo, tipo de parto, curso de vida, estado conyugal, documento e institución |
+| Conocimientos evidentes | Régimen de salud, edad y adolescencia, nivel educativo (con las 8 partes que pide la guía) |
+| Limitación y decisión | Cobertura de solo dos instituciones públicas y propuesta de afiliación durante la atención prenatal |
+
+Las cifras de los textos se calculan con los datos filtrados, así siempre coinciden con las gráficas.
+
 ## Flujo de trabajo en GitHub
 
 1. Actualizar `main`: `git checkout main && git pull`
