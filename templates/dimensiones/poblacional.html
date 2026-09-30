@@ -31,29 +31,37 @@
 
 {# ---------- Dos filtros interactivos: año e institución ---------- #}
 {% block filtros %}
-<form method="get" class="card card-body shadow-sm row g-3 align-items-end mx-0 filtro-auto">
-    <div class="col-md-4">
-        <label for="anio" class="form-label fw-semibold mb-1">Año de reporte</label>
-        <select id="anio" name="anio" class="form-select">
-            <option value="">Todos los años</option>
-            {% for a in anios %}
-            <option value="{{ a }}" {{ "selected" if anio_sel == a | string }}>{{ a }}</option>
-            {% endfor %}
-        </select>
-    </div>
-    <div class="col-md-5">
-        <label for="institucion" class="form-label fw-semibold mb-1">Institución</label>
-        <select id="institucion" name="institucion" class="form-select">
-            <option value="">Todas las instituciones</option>
-            {% for i in instituciones %}
-            <option value="{{ i }}" {{ "selected" if institucion_sel == i }}>{{ i | title | replace(" Del ", " del ") }}</option>
-            {% endfor %}
-        </select>
-    </div>
-    <div class="col-md-3">
-        <a href="{{ url_for('poblacional.index') }}" class="btn btn-outline-secondary w-100">
-            <i class="bi bi-arrow-counterclockwise me-1"></i>Limpiar filtros
-        </a>
+<form method="get" class="card shadow-sm border-0 filtro-auto">
+    <div class="card-body">
+        <div class="row g-3 align-items-end justify-content-start">
+            <div class="col-12 col-md-4 col-xl-3">
+                <label for="anio" class="form-label small fw-semibold text-secondary mb-1">
+                    <i class="bi bi-calendar3 me-1"></i>Año de reporte
+                </label>
+                <select id="anio" name="anio" class="form-select">
+                    <option value="">Todos los años</option>
+                    {% for a in anios %}
+                    <option value="{{ a }}" {{ "selected" if anio_sel == a | string }}>{{ a }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-12 col-md-5 col-xl-4">
+                <label for="institucion" class="form-label small fw-semibold text-secondary mb-1">
+                    <i class="bi bi-hospital me-1"></i>Institución
+                </label>
+                <select id="institucion" name="institucion" class="form-select">
+                    <option value="">Todas las instituciones</option>
+                    {% for i in instituciones %}
+                    <option value="{{ i }}" {{ "selected" if institucion_sel == i }}>{{ i | title | replace(" Del ", " del ") }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-12 col-md-auto">
+                <a href="{{ url_for('poblacional.index') }}" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-counterclockwise me-1"></i>Limpiar filtros
+                </a>
+            </div>
+        </div>
     </div>
 </form>
 {% if total_registros == 0 %}

@@ -1,5 +1,5 @@
 """
-Dimensión poblacional - Integrante 1.
+Dimensión poblacional : Integrante 1.
 
 Pregunta de análisis:
     ¿Cómo está compuesta y distribuida la población analizada según sus
