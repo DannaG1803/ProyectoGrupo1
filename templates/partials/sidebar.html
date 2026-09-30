@@ -1,0 +1,57 @@
+{#
+    Menú lateral. En pantallas grandes queda fijo a la izquierda y en
+    celular se abre como panel deslizable (offcanvas-lg de Bootstrap).
+    Las dimensiones salen de la lista DIMENSIONES en app.py
+#}
+{% set en_dimension = request.endpoint in dimensiones | map(attribute='endpoint') | list %}
+<aside class="offcanvas-lg offcanvas-start sidebar bg-marca text-white" tabindex="-1" id="menuLateral"
+       aria-labelledby="tituloMenu">
+
+    <div class="offcanvas-header border-bottom border-light border-opacity-25">
+        <a href="{{ url_for('inicio') }}" class="d-flex align-items-center text-white text-decoration-none" id="tituloMenu">
+            <i class="bi bi-heart-pulse fs-3 me-2"></i>
+            <span class="lh-sm">
+                <span class="d-block fw-bold">Nacimientos</span>
+                <span class="d-block small opacity-75">Bucaramanga 2020 - 2026</span>
+            </span>
+        </a>
+        <button type="button" class="btn-close btn-close-white d-lg-none" data-bs-dismiss="offcanvas"
+                data-bs-target="#menuLateral" aria-label="Cerrar"></button>
+    </div>
+
+    <div class="offcanvas-body d-flex flex-column p-3">
+        <nav class="nav flex-column gap-1">
+            <span class="sidebar-seccion">General</span>
+            <a class="nav-link sidebar-link {% if request.endpoint == 'inicio' %}active{% endif %}"
+               href="{{ url_for('inicio') }}">
+                <i class="bi bi-house-door"></i> Inicio
+            </a>
+
+            <a class="nav-link sidebar-link d-flex align-items-center {% if not en_dimension %}collapsed{% endif %}"
+               data-bs-toggle="collapse" href="#menuAnalisis" role="button"
+               aria-expanded="{{ 'true' if en_dimension else 'false' }}" aria-controls="menuAnalisis">
+                <i class="bi bi-bar-chart-line"></i> Análisis de datos
+                <i class="bi bi-chevron-down ms-auto flecha"></i>
+            </a>
+            <div class="collapse {% if en_dimension %}show{% endif %}" id="menuAnalisis">
+                <nav class="nav flex-column ms-3 border-start border-light border-opacity-25 ps-2 gap-1">
+                    {% for dim in dimensiones %}
+                    <a class="nav-link sidebar-link sidebar-sublink {% if request.endpoint == dim.endpoint %}active{% endif %}"
+                       href="{{ url_for(dim.endpoint) }}">
+                        <i class="bi {{ dim.icono }}"></i> {{ dim.nombre }}
+                    </a>
+                    {% endfor %}
+                </nav>
+            </div>
+
+            <span class="sidebar-seccion mt-3">Fuente de datos</span>
+            <a class="nav-link sidebar-link" href="{{ fuente.url }}" target="_blank" rel="noopener">
+                <i class="bi bi-box-arrow-up-right"></i> Datos Abiertos Colombia
+            </a>
+        </nav>
+
+        <div class="mt-auto pt-4 small opacity-75">
+            <i class="bi bi-mortarboard me-1"></i> Universidad de Cundinamarca
+        </div>
+    </div>
+</aside>

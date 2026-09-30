@@ -1,0 +1,68 @@
+{#
+    Componentes reutilizables para los tableros.
+    Se importan así:  {% import "_macros.html" as ui %}
+#}
+
+{# Tarjeta de indicador: ui.indicador("Total nacimientos", "7.016", "2020 - 2026", "bi-people") #}
+{% macro indicador(titulo, valor, nota="", icono="bi-bar-chart") %}
+<div class="card indicador h-100 shadow-sm">
+    <div class="card-body d-flex align-items-center gap-3">
+        <div class="indicador-icono"><i class="bi {{ icono }}"></i></div>
+        <div>
+            <div class="text-muted small">{{ titulo }}</div>
+            <div class="fs-3 fw-bold lh-sm">{{ valor }}</div>
+            {% if nota %}<div class="small text-muted">{{ nota }}</div>{% endif %}
+        </div>
+    </div>
+</div>
+{% endmacro %}
+
+{#
+    Tarjeta de visualización. Dentro va un <canvas> o <div> con el id que se
+    pase, y debajo la interpretación de la gráfica.
+#}
+{% macro visualizacion(id, titulo, interpretacion="") %}
+<div class="card h-100 shadow-sm">
+    <div class="card-header bg-white fw-semibold">{{ titulo }}</div>
+    <div class="card-body">
+        <div class="contenedor-grafica">
+            <canvas id="{{ id }}"></canvas>
+        </div>
+    </div>
+    <div class="card-footer bg-white small">
+        <strong>Interpretación:</strong>
+        {{ interpretacion or "Pendiente por redactar." }}
+    </div>
+</div>
+{% endmacro %}
+
+{#
+    Conocimiento evidente con la estructura que pide la guía.
+    Recibe un diccionario con las llaves: pregunta, variables, procedimiento,
+    evidencia, hallazgo, interpretacion, utilidad, limitacion.
+#}
+{% macro conocimiento(numero, c) %}
+<div class="card h-100 shadow-sm conocimiento">
+    <div class="card-header bg-white fw-semibold">
+        <span class="badge bg-marca me-2">{{ numero }}</span>{{ c.hallazgo or "Conocimiento pendiente" }}
+    </div>
+    <div class="card-body small">
+        <dl class="row mb-0">
+            {% for campo, etiqueta in [("pregunta", "Pregunta"), ("variables", "Variables"),
+                                       ("procedimiento", "Procedimiento"), ("evidencia", "Evidencia"),
+                                       ("hallazgo", "Hallazgo"), ("interpretacion", "Interpretación"),
+                                       ("utilidad", "Utilidad"), ("limitacion", "Limitación")] %}
+            <dt class="col-sm-4">{{ etiqueta }}</dt>
+            <dd class="col-sm-8">{{ c[campo] or "—" }}</dd>
+            {% endfor %}
+        </dl>
+    </div>
+</div>
+{% endmacro %}
+
+{# Mensaje para las secciones que todavía no se han desarrollado #}
+{% macro pendiente(texto="Sección en construcción.") %}
+<div class="alert alert-light border text-muted mb-0">
+    <i class="bi bi-hourglass-split me-1"></i> {{ texto }}
+</div>
+{% endmacro %}
