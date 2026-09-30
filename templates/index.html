@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+{% import "_macros.html" as ui %}
+
+{% block titulo %}Inicio{% endblock %}
+
+{% block contenido %}
+<section class="portada rounded-4 p-4 p-md-5 mb-4 shadow-sm">
+    <div class="row align-items-center g-4">
+        <div class="col-lg-8">
+            <span class="badge bg-light text-marca mb-2">Análisis exploratorio de datos</span>
+            <h1 class="display-6 fw-bold">Nacimientos en Bucaramanga {{ resumen.anio_min }} – {{ resumen.anio_max }}</h1>
+            <p class="lead mb-4">{{ fuente.poblacion }}</p>
+            <a href="{{ url_for(dimensiones[0].endpoint) }}" class="btn btn-light btn-lg">
+                <i class="bi bi-bar-chart-line me-1"></i> Ver análisis
+            </a>
+        </div>
+        <div class="col-lg-4 text-center d-none d-lg-block">
+            <i class="bi bi-heart-pulse portada-icono"></i>
+        </div>
+    </div>
+</section>
+
+{# Cifras generales del conjunto de datos #}
+<section class="row g-3 mb-5">
+    <div class="col-sm-6 col-lg-3">{{ ui.indicador("Nacimientos registrados", resumen.registros | miles, "Registros únicos", "bi-people") }}</div>
+    <div class="col-sm-6 col-lg-3">{{ ui.indicador("Periodo", resumen.anio_min ~ " – " ~ resumen.anio_max, resumen.fecha_min ~ " a " ~ resumen.fecha_max, "bi-calendar3") }}</div>
+    <div class="col-sm-6 col-lg-3">{{ ui.indicador("Municipios de residencia", resumen.municipios, resumen.comunas ~ " comunas / zonas", "bi-geo-alt") }}</div>
+    <div class="col-sm-6 col-lg-3">{{ ui.indicador("Variables", resumen.variables, resumen.instituciones ~ " instituciones de salud", "bi-table") }}</div>
+</section>
+
+{# Acceso a las cuatro dimensiones #}
+<section class="mb-5">
+    <h2 class="h4 titulo-seccion">Dimensiones de análisis</h2>
+    <div class="row g-3">
+        {% for dim in dimensiones %}
+        <div class="col-md-6 col-xl-3">
+            <a href="{{ url_for(dim.endpoint) }}" class="card tarjeta-dimension h-100 text-decoration-none shadow-sm">
+                <div class="card-body">
+                    <i class="bi {{ dim.icono }} fs-2 text-marca"></i>
+                    <h3 class="h6 fw-semibold mt-2 text-body">{{ dim.nombre }}</h3>
+                    <p class="small text-muted mb-2">{{ dim.descripcion }}</p>
+                    <span class="badge text-bg-light border">{{ dim.integrante }}</span>
+                </div>
+            </a>
+        </div>
+        {% endfor %}
+    </div>
+</section>
+
+{# Ficha del dataset #}
+<section class="row g-4">
+    <div class="col-lg-4">
+        <h2 class="h4 titulo-seccion">Conjunto de datos</h2>
+        <dl class="small">
+            <dt>Nombre</dt><dd>{{ fuente.nombre }}</dd>
+            <dt>Entidad que publica</dt><dd>{{ fuente.entidad }}</dd>
+            <dt>Portal</dt><dd><a href="{{ fuente.url }}" target="_blank" rel="noopener">{{ fuente.portal }}</a></dd>
+            <dt>Población</dt><dd>{{ fuente.poblacion }}</dd>
+            <dt>Registros</dt><dd>{{ resumen.registros | miles }} nacimientos</dd>
+        </dl>
+    </div>
+    <div class="col-lg-8">
+        <h2 class="h4 titulo-seccion">Variables principales</h2>
+        <div class="table-responsive">
+            <table class="table table-sm table-hover align-middle small">
+                <thead class="table-light">
+                    <tr><th>Variable</th><th>Tipo</th><th>Descripción</th></tr>
+                </thead>
+                <tbody>
+                    {% for v in variables %}
+                    <tr>
+                        <td>{{ v.nombre }}<br><code class="small">{{ v.columna }}</code></td>
+                        <td><span class="badge tipo-{{ v.tipo | lower }}">{{ v.tipo }}</span></td>
+                        <td>{{ v.descripcion }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>
+{% endblock %}

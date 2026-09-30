@@ -1,0 +1,93 @@
+{#
+    Estructura común de los tableros. Cada dimensión hereda de aquí y
+    reemplaza los bloques que necesite. El orden de las secciones sigue
+    los requisitos de la guía:
+      título, pregunta, variables, filtros, 3 indicadores, 3 visualizaciones
+      con interpretación, 3 conocimientos, limitación y decisión.
+#}
+{% extends "base.html" %}
+{% import "_macros.html" as ui %}
+
+{% block titulo %}{{ titulo }}{% endblock %}
+
+{% block contenido %}
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb small">
+        <li class="breadcrumb-item"><a href="{{ url_for('inicio') }}">Inicio</a></li>
+        <li class="breadcrumb-item">Análisis de datos</li>
+        <li class="breadcrumb-item active" aria-current="page">{{ titulo }}</li>
+    </ol>
+</nav>
+
+<header class="encabezado-dimension mb-4">
+    <h1 class="h2 fw-bold mb-2">{{ titulo }}</h1>
+    <p class="lead mb-0"><i class="bi bi-question-circle me-1"></i>{{ pregunta }}</p>
+</header>
+
+<section class="mb-4">
+    <h2 class="h5 titulo-seccion">Variables utilizadas</h2>
+    {% block variables %}{{ ui.pendiente() }}{% endblock %}
+</section>
+
+<section class="mb-4">
+    <h2 class="h5 titulo-seccion">Filtros</h2>
+    {% block filtros %}{{ ui.pendiente("Aquí van los dos filtros interactivos.") }}{% endblock %}
+</section>
+
+<section class="mb-4">
+    <h2 class="h5 titulo-seccion">Indicadores</h2>
+    <div class="row g-3">
+        {% block indicadores %}
+        <div class="col-md-4">{{ ui.indicador("Total de registros", total_registros | miles, "Registros del dataset", "bi-database") }}</div>
+        <div class="col-md-4">{{ ui.indicador("Indicador 2", "—", "Pendiente") }}</div>
+        <div class="col-md-4">{{ ui.indicador("Indicador 3", "—", "Pendiente") }}</div>
+        {% endblock %}
+    </div>
+</section>
+
+<section class="mb-4">
+    <h2 class="h5 titulo-seccion">Visualizaciones</h2>
+    <div class="row g-3">
+        {% block visualizaciones %}
+        {% for i in range(1, 4) %}
+        <div class="col-lg-4">{{ ui.visualizacion("grafica" ~ i, "Visualización " ~ i) }}</div>
+        {% endfor %}
+        {% endblock %}
+    </div>
+</section>
+
+<section class="mb-4">
+    <h2 class="h5 titulo-seccion">Conocimientos evidentes</h2>
+    <div class="row g-3">
+        {% block conocimientos %}
+        {% for i in range(1, 4) %}
+        <div class="col-lg-4">{{ ui.conocimiento(i, {}) }}</div>
+        {% endfor %}
+        {% endblock %}
+    </div>
+</section>
+
+<div class="row g-3 mb-2">
+    <section class="col-md-6">
+        <div class="card h-100 border-warning-subtle shadow-sm">
+            <div class="card-body">
+                <h2 class="h6 fw-semibold"><i class="bi bi-exclamation-triangle text-warning me-1"></i>Limitación del análisis</h2>
+                {% block limitacion %}<p class="mb-0 text-muted">Pendiente por redactar.</p>{% endblock %}
+            </div>
+        </div>
+    </section>
+    <section class="col-md-6">
+        <div class="card h-100 border-success-subtle shadow-sm">
+            <div class="card-body">
+                <h2 class="h6 fw-semibold"><i class="bi bi-lightbulb text-success me-1"></i>Decisión sustentada en los datos</h2>
+                {% block decision %}<p class="mb-0 text-muted">Pendiente por redactar.</p>{% endblock %}
+            </div>
+        </div>
+    </section>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{# Aquí cada dimensión crea sus gráficas con Chart.js (ya viene cargado desde base.html) #}
+{% block graficas %}{% endblock %}
+{% endblock %}
