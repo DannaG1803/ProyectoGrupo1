@@ -1,7 +1,182 @@
 {#
     Tablero de la dimensión poblacional (Integrante 1).
-    Hereda la estructura de _estructura.html; solo hay que reemplazar los
-    bloques: variables, filtros, indicadores, visualizaciones, conocimientos,
-    limitacion, decision y graficas (JavaScript de Chart.js).
+    Hereda la estructura de _estructura.html y reemplaza los bloques:
+    variables, filtros, indicadores, visualizaciones, conocimientos,
+    limitacion, decision y graficas.
 #}
 {% extends "dimensiones/_estructura.html" %}
+
+{# ---------- Descripción de las variables utilizadas ---------- #}
+{% block variables %}
+<div class="card shadow-sm">
+    <div class="table-responsive">
+        <table class="table table-sm align-middle mb-0">
+            <thead class="table-light">
+                <tr><th>Variable</th><th>Columna</th><th>Tipo</th><th>Descripción</th></tr>
+            </thead>
+            <tbody>
+                {% for v in variables %}
+                <tr>
+                    <td class="fw-semibold">{{ v.nombre }}</td>
+                    <td><code>{{ v.columna }}</code></td>
+                    <td><span class="badge tipo-{{ v.tipo | lower }}">{{ v.tipo }}</span></td>
+                    <td>{{ v.descripcion }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{# ---------- Dos filtros interactivos: año e institución ---------- #}
+{% block filtros %}
+<form method="get" class="card card-body shadow-sm row g-3 align-items-end mx-0 filtro-auto">
+    <div class="col-md-4">
+        <label for="anio" class="form-label fw-semibold mb-1">Año de reporte</label>
+        <select id="anio" name="anio" class="form-select">
+            <option value="">Todos los años</option>
+            {% for a in anios %}
+            <option value="{{ a }}" {{ "selected" if anio_sel == a | string }}>{{ a }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="col-md-5">
+        <label for="institucion" class="form-label fw-semibold mb-1">Institución</label>
+        <select id="institucion" name="institucion" class="form-select">
+            <option value="">Todas las instituciones</option>
+            {% for i in instituciones %}
+            <option value="{{ i }}" {{ "selected" if institucion_sel == i }}>{{ i | title | replace(" Del ", " del ") }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="col-md-3">
+        <a href="{{ url_for('poblacional.index') }}" class="btn btn-outline-secondary w-100">
+            <i class="bi bi-arrow-counterclockwise me-1"></i>Limpiar filtros
+        </a>
+    </div>
+</form>
+{% if total_registros == 0 %}
+<div class="alert alert-warning mt-3 mb-0">
+    <i class="bi bi-exclamation-circle me-1"></i>No hay registros con la combinación de filtros seleccionada.
+</div>
+{% endif %}
+{% endblock %}
+
+{# ---------- Tres indicadores ---------- #}
+{% block indicadores %}
+<div class="col-md-4">{{ ui.indicador("Total de registros", total_registros | miles, "Nacimientos con los filtros aplicados", "bi-database") }}</div>
+<div class="col-md-4">{{ ui.indicador("Edad promedio de la madre", indicadores.edad_media ~ (" años" if total_registros else ""), "Media de edad_madre", "bi-person-heart") }}</div>
+<div class="col-md-4">{{ ui.indicador("Madres en régimen subsidiado", indicadores.pct_subsidiado ~ (" %" if total_registros else ""), "Porcentaje sobre el total de registros", "bi-shield-check") }}</div>
+{% endblock %}
+
+{# ---------- Tres visualizaciones + perfil general ---------- #}
+{% block visualizaciones %}
+{% set interp = interpretaciones or {} %}
+<div class="col-lg-6">{{ ui.visualizacion("grafica1", "Participación por régimen de seguridad en salud", interp.get("regimen", "")) }}</div>
+<div class="col-lg-6">{{ ui.visualizacion("grafica2", "Nivel educativo de la madre (% de nacimientos)", interp.get("educacion", "")) }}</div>
+<div class="col-12">{{ ui.visualizacion("grafica3", "Distribución de la edad de la madre (rangos de 5 años)", interp.get("edad", "")) }}</div>
+
+<div class="col-12">
+    <div class="card shadow-sm">
+        <div class="card-header bg-white fw-semibold">Perfil general de la población</div>
+        <div class="table-responsive">
+            <table class="table table-sm align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Variable</th><th class="text-center">Categorías</th>
+                        <th>Grupo predominante</th><th class="text-end">%</th>
+                        <th>Grupo minoritario</th><th class="text-end">%</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for f in perfil %}
+                    <tr>
+                        <td class="fw-semibold">{{ f.variable }}</td>
+                        <td class="text-center">{{ f.categorias }}</td>
+                        <td>{{ f.predominante }}</td><td class="text-end">{{ f.pct_predominante }}</td>
+                        <td>{{ f.minoritaria }}</td><td class="text-end">{{ f.pct_minoritaria }}</td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="6" class="text-muted">Sin datos para los filtros seleccionados.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <div class="card-footer bg-white small text-muted">
+            Porcentajes sobre el total de registros filtrados; no se muestra la categoría «Sin información».
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{# ---------- Tres conocimientos evidentes (texto generado en routes/poblacional.py) ---------- #}
+{% block conocimientos %}
+{% for c in conocimientos %}
+<div class="col-lg-4">{{ ui.conocimiento(loop.index, c) }}</div>
+{% endfor %}
+{% endblock %}
+
+{# ---------- Limitación y decisión ---------- #}
+{% block limitacion %}<p class="mb-0">{{ limitacion }}</p>{% endblock %}
+{% block decision %}<p class="mb-0">{{ decision }}</p>{% endblock %}
+
+{# ---------- Gráficas con Chart.js (datos calculados en routes/poblacional.py) ---------- #}
+{% block graficas %}
+<script>
+const regimen = JSON.parse('{{ g_regimen | tojson | safe }}');
+const educacion = JSON.parse('{{ g_educacion | tojson | safe }}');
+const edad = JSON.parse('{{ g_edad | tojson | safe }}');
+const num = (n) => n.toLocaleString("es-CO");
+
+// 1. Dona: participación por régimen de seguridad
+new Chart(document.getElementById("grafica1"), {
+    type: "doughnut",
+    data: {
+        labels: regimen.etiquetas,
+        datasets: [{ data: regimen.valores, backgroundColor: PALETA }]
+    },
+    options: {
+        plugins: {
+            tooltip: { callbacks: { label: (c) => ` ${c.label}: ${num(c.parsed)} nacimientos (${num(regimen.porcentajes[c.dataIndex])} %)` } }
+        }
+    }
+});
+
+// 2. Barras horizontales: nivel educativo de la madre
+new Chart(document.getElementById("grafica2"), {
+    type: "bar",
+    data: {
+        labels: educacion.etiquetas,
+        datasets: [{ data: educacion.porcentajes, backgroundColor: PALETA[2] }]
+    },
+    options: {
+        indexAxis: "y",
+        plugins: {
+            legend: { display: false },
+            tooltip: { callbacks: { label: (c) => ` ${num(c.parsed.x)} % (${num(educacion.valores[c.dataIndex])} nacimientos)` } }
+        },
+        scales: { x: { ticks: { callback: (v) => v + " %" } } }
+    }
+});
+
+// 3. Histograma: edad de la madre por rangos de 5 años
+new Chart(document.getElementById("grafica3"), {
+    type: "bar",
+    data: {
+        labels: edad.etiquetas,
+        datasets: [{ data: edad.valores, backgroundColor: PALETA[0] }]
+    },
+    options: {
+        plugins: {
+            legend: { display: false },
+            tooltip: { callbacks: { label: (c) => ` ${num(c.parsed.y)} nacimientos (${num(edad.porcentajes[c.dataIndex])} %)` } }
+        },
+        scales: {
+            x: { title: { display: true, text: "Edad de la madre (años)" }, grid: { display: false } },
+            y: { title: { display: true, text: "Nacimientos" }, beginAtZero: true }
+        }
+    }
+});
+</script>
+{% endblock %}
