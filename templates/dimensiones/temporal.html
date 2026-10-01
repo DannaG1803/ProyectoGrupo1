@@ -1,7 +1,122 @@
-{#
-    Tablero de la dimensión temporal (Integrante 3).
-    Hereda la estructura de _estructura.html; solo hay que reemplazar los
-    bloques: variables, filtros, indicadores, visualizaciones, conocimientos,
-    limitacion, decision y graficas (JavaScript de Chart.js).
+{
 #}
 {% extends "dimensiones/_estructura.html" %}
+
+{% import "_macros.html" as ui %}
+
+{% block variables %}
+<div class="d-flex flex-wrap gap-2">
+    {% for variable in ["Fecha de nacimiento", "Año", "Mes", "Trimestre", "Día de la semana"] %}
+    <span class="badge text-bg-light border fw-normal">{{ variable }}</span>
+    {% endfor %}
+</div>
+<p class="small text-muted mt-2 mb-0">Periodo observado: {{ fecha_inicio }} a {{ fecha_fin }}.</p>
+{% endblock %}
+
+{% block filtros %}
+<div class="alert alert-warning mb-0" role="note">
+    <strong>Preparación de los datos:</strong> la descarga original contenía {{ filas_fuente | miles }} filas. Durante la depuración se retiraron {{ duplicados_exactos | miles }} registros duplicados, por lo que el análisis se realizó sobre {{ total_registros | miles }} nacimientos únicos. En los años 2020–2025 se identificaron cinco copias por nacimiento; por esta razón, las tablas y gráficas presentan los conteos depurados.
+</div>
+{% endblock %}
+
+{% block indicadores %}
+<div class="col-md-4">{{ ui.indicador("Nacimientos únicos", total_registros | miles, "01/01/2020 – " ~ fecha_fin, "bi-database") }}</div>
+<div class="col-md-4">{{ ui.indicador("Variación 2020–2025", ("%.1f" | format(variacion_2020_2025) | replace("-", "−") | replace(".", ",")) ~ " %", "Descenso en años completos", "bi-graph-down-arrow") }}</div>
+<div class="col-md-4">{{ ui.indicador("Primer trimestre de 2026", q1_actual | miles, ("%.1f" | format(variacion_q1) | replace("-", "−") | replace(".", ",")) ~ " % frente a ene–mar de 2025", "bi-calendar3") }}</div>
+{% endblock %}
+
+{% block visualizaciones %}
+<div class="col-xl-6">{{ ui.visualizacion("graficaAnual", "Nacimientos únicos por año", "Todos los años completos descienden. La caída más fuerte es 2023 (" ~ ("%.1f" | format(cambio_2023) | replace("-", "−") | replace(".", ",")) ~ " %); el último año está incompleto.") }}</div>
+<div class="col-xl-6">{{ ui.visualizacion("graficaPeriodos", "Comparación de periodos iguales", "Ene–mar de 2026 suma " ~ q1_actual ~ " frente a " ~ periodos_por_anio["2025"][0] ~ " en 2025 (" ~ ("%.1f" | format(variacion_q1) | replace("-", "−") | replace(".", ",")) ~ " %). Ene–jul: " ~ ene_jul_actual ~ " frente a " ~ periodos_por_anio["2025"][1] ~ " (" ~ ("%.1f" | format(variacion_ene_jul) | replace("-", "−") | replace(".", ",")) ~ " %).") }}</div>
+<div class="col-xl-6">{{ ui.visualizacion("graficaEstacional", "Índice estacional por mes", "Agosto (1,12), enero (1,09) y marzo (1,07) superan el promedio anual. Febrero queda más bajo (0,87), en parte por tener menos días.") }}</div>
+<div class="col-xl-6">{{ ui.visualizacion("graficaSemana", "Promedio de nacimientos únicos por día", "En años completos: viernes " ~ ("%.1f" | format(promedio_viernes) | replace(".", ",")) ~ ", martes " ~ ("%.1f" | format(promedio_martes) | replace(".", ",")) ~ " y domingo " ~ ("%.1f" | format(promedio_domingo) | replace(".", ",")) ~ " por día. La proporción de cesáreas es " ~ ("%.1f" | format(cesarea_viernes) | replace(".", ",")) ~ " % los viernes y " ~ ("%.1f" | format(cesarea_domingo) | replace(".", ",")) ~ " % los domingos; asociación descriptiva, no prueba de causalidad.") }}</div>
+{% endblock %}
+
+{% block conocimientos %}
+<div class="col-12">
+    <div class="table-responsive">
+        <table class="table table-sm table-striped table-bordered align-middle mb-0">
+            <caption class="caption-top fw-semibold text-dark">Nacimientos únicos por año</caption>
+            <thead class="table-light"><tr><th scope="col">Año</th><th scope="col" class="text-end">Registros</th><th scope="col" class="text-end">Cambio anual</th><th scope="col" class="text-end">Promedio mensual</th></tr></thead>
+            <tbody>
+                {% for i in range(anios | length) %}
+                <tr>
+                    <th scope="row">{{ anios[i] }}</th>
+                    <td class="text-end">{{ registros_anuales[i] | miles }}</td>
+                    <td class="text-end">{% if cambios_anuales[i] is not none %}{{ "%+.1f" | format(cambios_anuales[i]) | replace("-", "−") | replace(".", ",") }} %{% else %}—{% endif %}</td>
+                    <td class="text-end">{% if promedio_mensual[i] is not none %}{{ promedio_mensual[i] }}{% else %}—{% endif %}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+<div class="col-12">
+    <div class="table-responsive">
+        <table class="table table-sm table-bordered align-middle mb-0">
+            <caption class="caption-top fw-semibold text-dark">Comparación de meses equivalentes</caption>
+            <thead class="table-light"><tr><th scope="col">Periodo</th>{% for anio in periodos_por_anio %}<th scope="col" class="text-end">{{ anio }}</th>{% endfor %}</tr></thead>
+            <tbody>
+                {% for indice in range(periodos | length) %}
+                <tr><th scope="row">{{ periodos[indice] }}</th>{% for valores in periodos_por_anio.values() %}<td class="text-end">{{ valores[indice] | miles }}</td>{% endfor %}</tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <p class="small text-muted mt-2 mb-0">La base llega hasta {{ fecha_fin }}. Ene–mar de 2026: {{ q1_actual }} nacimientos únicos ({{ "%.1f" | format(variacion_q1) | replace("-", "−") | replace(".", ",") }} % frente a 2025); ene–jul: {{ ene_jul_actual }} ({{ "%.1f" | format(variacion_ene_jul) | replace("-", "−") | replace(".", ",") }} %). Abril–julio registran {{ meses_2026_unicos | join(", ") }} nacimientos únicos por mes; los valores 150, 98, 53 y 50 del original reflejan una multiplicidad decreciente de filas duplicadas (3, 2, 1 y 1 por registro), no demuestran retraso de reporte.</p>
+</div>
+<div class="col-lg-4">
+    <article class="card h-100 shadow-sm"><div class="card-body">
+        <h3 class="h6 fw-semibold">Descenso marcado en 2023</h3>
+        <p class="small mb-2">Los nacimientos únicos pasaron de {{ registros_2022 }} en 2022 a {{ registros_2023 }} en 2023 ({{ "%.1f" | format(cambio_2023) | replace("-", "−") | replace(".", ",") }} %). El cuarto trimestre de 2022 tuvo {{ q4_2022 }} frente a {{ q3_2022 }} en el tercero; esto señala una reducción, pero no fija por sí sola un punto de quiebre estadístico.</p>
+        <p class="small mb-0"><strong>Trimestre máximo completo:</strong> {{ trimestre_alto[0] }}, {{ trimestre_alto[1] }}. <strong>Mínimo:</strong> {{ trimestre_bajo[0] }}, {{ trimestre_bajo[1] }}.</p>
+    </div></article>
+</div>
+<div class="col-lg-4">
+    <article class="card h-100 shadow-sm"><div class="card-body">
+        <h3 class="h6 fw-semibold">Máximos y mínimos mensuales</h3>
+        <p class="small mb-2"><strong>Meses con más nacimientos:</strong> {% for nombre, valor in meses_altos %}{{ nombre }} ({{ valor }}){% if not loop.last %}, {% endif %}{% endfor %}.</p>
+        <p class="small mb-2"><strong>Meses con menos nacimientos:</strong> {% for nombre, valor in meses_bajos %}{{ nombre }} ({{ valor }}){% if not loop.last %}, {% endif %}{% endfor %}.</p>
+        <p class="small mb-0"><strong>Día máximo:</strong> {{ dia_pico }}, {{ registros_dia_pico }} nacimientos únicos; mediana de {{ mediana_diaria | int }} por día calendario.</p>
+    </div></article>
+</div>
+<div class="col-lg-4">
+    <article class="card h-100 shadow-sm"><div class="card-body">
+        <h3 class="h6 fw-semibold">Codificación y comparabilidad</h3>
+        <p class="small mb-2">“Juventud” pasa de {{ "%.1f" | format(curso_por_anio["2022"]["JUVENTUD"]) | replace(".", ",") }} % en 2022 a {{ "%.1f" | format(curso_por_anio["2024"]["JUVENTUD"]) | replace(".", ",") }} % en 2024; “Adultez” sube de {{ "%.1f" | format(curso_por_anio["2022"]["ADULTEZ"]) | replace(".", ",") }} % a {{ "%.1f" | format(curso_por_anio["2024"]["ADULTEZ"]) | replace(".", ",") }} %. Es compatible con un cambio de codificación; la base por sí sola no confirma su causa. Adolescencia: {{ "%.1f" | format(curso_por_anio["2022"]["ADOLESCENCIA"]) | replace(".", ",") }} % en 2022, {{ "%.1f" | format(curso_por_anio["2023"]["ADOLESCENCIA"]) | replace(".", ",") }} % en 2023, {{ "%.1f" | format(curso_por_anio["2024"]["ADOLESCENCIA"]) | replace(".", ",") }} % en 2024 y {{ "%.1f" | format(curso_por_anio["2025"]["ADOLESCENCIA"]) | replace(".", ",") }} % en 2025.</p>
+        <p class="small mb-0">El original mezcla “F/M” con “FEMENINO/MASCULINO” en 2025; <code>preparar_datos.py</code> ya unifica estas etiquetas en el CSV limpio.</p>
+    </div></article>
+</div>
+{% endblock %}
+
+{% block limitacion %}
+<p class="mb-0">La fuente cubre nacimientos atendidos en solo dos instituciones públicas de Bucaramanga, no todos los nacimientos de la ciudad. Los 34.309 registros fuente incluían 27.293 filas repetidas; el análisis usa 7.016 registros únicos. La base termina el {{ fecha_fin }}: 2026 no es un año completo y debe actualizarse, pero la caída bruta de abril–julio no prueba retraso porque coincide con el cambio en duplicados.</p>
+{% endblock %}
+
+{% block decision %}
+<p class="mb-0">Usar la serie deduplicada para planificar y estudiar la caída de 2023, verificando cambios de cobertura y codificación con la fuente. Actualizar 2026 cuando haya nuevos cortes; no inferir una caída de abril–julio a partir de las filas repetidas ni atribuirla a retrasos sin evidencia de fechas de notificación.</p>
+{% endblock %}
+
+{% block conclusiones %}
+<section class="mt-4">
+    <h2 class="h5 titulo-seccion">Resultado final</h2>
+    <p>Entre 2020 y 2025, los nacimientos únicos registrados pasaron de 1.615 a 661, una disminución del 59,1 %. La reducción más pronunciada se presentó en 2023, cuando el conteo anual cayó un 36,2 % frente a 2022.</p>
+    <p>La distribución mensual muestra un patrón estacional: agosto, enero y marzo suelen ubicarse por encima del promedio mensual de cada año, mientras que febrero, septiembre y diciembre tienden a situarse por debajo. Estos índices describen una variación relativa y no revierten la tendencia general descendente.</p>
+    <p class="mb-0">El análisis comprende 7.016 nacimientos únicos de dos instituciones públicas, luego de depurar 27.293 duplicados en la descarga original de 34.309 filas. Entre enero y julio de 2026 se registraron 367 nacimientos únicos, un 4,2 % menos que en el mismo periodo de 2025. Los resultados describen los registros de esas instituciones y no representan el total de nacimientos de Bucaramanga.</p>
+</section>
+{% endblock %}
+
+{% block graficas %}
+<script id="datosTemporales" type="application/json">
+{{ {
+    "anios": anios,
+    "registros": registros_anuales,
+    "periodos": periodos_por_anio,
+    "meses": meses,
+    "indices": indice_estacional,
+    "dias": dias_semana,
+    "promedioDias": promedio_dia_semana
+} | tojson }}
+</script>
+<script src="{{ url_for('static', filename='js/temporal.js') }}"></script>
+{% endblock %}
