@@ -1,8 +1,4 @@
-{#
-    Tablero de la dimensión temporal (Integrante 3).
-    Hereda la estructura de _estructura.html; solo hay que reemplazar los
-    bloques: variables, filtros, indicadores, visualizaciones, conocimientos,
-    limitacion, decision y graficas (JavaScript de Chart.js).
+{
 #}
 {% extends "dimensiones/_estructura.html" %}
 
@@ -19,7 +15,7 @@
 
 {% block filtros %}
 <div class="alert alert-warning mb-0" role="note">
-    <strong>Base validada:</strong> el archivo original tenía {{ filas_fuente | miles }} filas; se eliminaron {{ duplicados_exactos | miles }} repeticiones exactas y quedaron {{ total_registros | miles }} nacimientos únicos. En 2020–2025 cada registro estaba repetido cinco veces. Las gráficas y comparaciones usan la base única, no el conteo inflado de filas fuente.
+    <strong>Preparación de los datos:</strong> la descarga original contenía {{ filas_fuente | miles }} filas. Durante la depuración se retiraron {{ duplicados_exactos | miles }} registros duplicados, por lo que el análisis se realizó sobre {{ total_registros | miles }} nacimientos únicos. En los años 2020–2025 se identificaron cinco copias por nacimiento; por esta razón, las tablas y gráficas presentan los conteos depurados.
 </div>
 {% endblock %}
 
@@ -99,6 +95,15 @@
 
 {% block decision %}
 <p class="mb-0">Usar la serie deduplicada para planificar y estudiar la caída de 2023, verificando cambios de cobertura y codificación con la fuente. Actualizar 2026 cuando haya nuevos cortes; no inferir una caída de abril–julio a partir de las filas repetidas ni atribuirla a retrasos sin evidencia de fechas de notificación.</p>
+{% endblock %}
+
+{% block conclusiones %}
+<section class="mt-4">
+    <h2 class="h5 titulo-seccion">Resultado final</h2>
+    <p>Entre 2020 y 2025, los nacimientos únicos registrados pasaron de 1.615 a 661, una disminución del 59,1 %. La reducción más pronunciada se presentó en 2023, cuando el conteo anual cayó un 36,2 % frente a 2022.</p>
+    <p>La distribución mensual muestra un patrón estacional: agosto, enero y marzo suelen ubicarse por encima del promedio mensual de cada año, mientras que febrero, septiembre y diciembre tienden a situarse por debajo. Estos índices describen una variación relativa y no revierten la tendencia general descendente.</p>
+    <p class="mb-0">El análisis comprende 7.016 nacimientos únicos de dos instituciones públicas, luego de depurar 27.293 duplicados en la descarga original de 34.309 filas. Entre enero y julio de 2026 se registraron 367 nacimientos únicos, un 4,2 % menos que en el mismo periodo de 2025. Los resultados describen los registros de esas instituciones y no representan el total de nacimientos de Bucaramanga.</p>
+</section>
 {% endblock %}
 
 {% block graficas %}
