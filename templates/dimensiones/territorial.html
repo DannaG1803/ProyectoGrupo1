@@ -1,7 +1,219 @@
 {#
     Tablero de la dimensión territorial (Integrante 2).
-    Hereda la estructura de _estructura.html; solo hay que reemplazar los
-    bloques: variables, filtros, indicadores, visualizaciones, conocimientos,
-    limitacion, decision y graficas (JavaScript de Chart.js).
+    Hereda la estructura de _estructura.html y reemplaza los bloques:
+    variables, filtros, indicadores, visualizaciones, conocimientos,
+    limitacion, decision y graficas.
 #}
 {% extends "dimensiones/_estructura.html" %}
+
+{# Estilos solo de este tablero #}
+{% block estilos %}
+<style>
+    /* La gráfica de comunas tiene muchas barras, necesita más alto */
+    .contenedor-grafica:has(#grafica1),
+    .contenedor-grafica:has(#grafica2) { height: 420px; }
+    .tabla-desplazable { max-height: 380px; overflow-y: auto; }
+</style>
+{% endblock %}
+
+{# ---------- Descripción de las variables utilizadas ---------- #}
+{% block variables %}
+<div class="card shadow-sm">
+    <div class="table-responsive">
+        <table class="table table-sm align-middle mb-0">
+            <thead class="table-light">
+                <tr><th>Variable</th><th>Columna</th><th>Tipo</th><th>Descripción</th></tr>
+            </thead>
+            <tbody>
+                {% for v in variables %}
+                <tr>
+                    <td class="fw-semibold">{{ v.nombre }}</td>
+                    <td><code>{{ v.columna }}</code></td>
+                    <td><span class="badge tipo-{{ v.tipo | lower }}">{{ v.tipo }}</span></td>
+                    <td>{{ v.descripcion }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{# ---------- Dos filtros interactivos: año y área de residencia ---------- #}
+{% block filtros %}
+<form method="get" class="card shadow-sm border-0 filtro-auto">
+    <div class="card-body">
+        <div class="row g-3 align-items-end justify-content-start">
+            <div class="col-12 col-md-4 col-xl-3">
+                <label for="anio" class="form-label small fw-semibold text-secondary mb-1">
+                    <i class="bi bi-calendar3 me-1"></i>Año de reporte
+                </label>
+                <select id="anio" name="anio" class="form-select">
+                    <option value="">Todos los años</option>
+                    {% for a in anios %}
+                    <option value="{{ a }}" {{ "selected" if anio_sel == a | string }}>{{ a }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-12 col-md-5 col-xl-4">
+                <label for="area" class="form-label small fw-semibold text-secondary mb-1">
+                    <i class="bi bi-signpost-2 me-1"></i>Área de residencia
+                </label>
+                <select id="area" name="area" class="form-select">
+                    <option value="">Todas las áreas</option>
+                    {% for a in areas %}
+                    <option value="{{ a }}" {{ "selected" if area_sel == a }}>{{ a | capitalize }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-12 col-md-auto">
+                <a href="{{ url_for('territorial.index') }}" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-counterclockwise me-1"></i>Limpiar filtros
+                </a>
+            </div>
+        </div>
+    </div>
+</form>
+{% if total_registros == 0 %}
+<div class="alert alert-warning mt-3 mb-0">
+    <i class="bi bi-exclamation-circle me-1"></i>No hay registros con la combinación de filtros seleccionada.
+</div>
+{% endif %}
+{% endblock %}
+
+{# ---------- Tres indicadores ---------- #}
+{% block indicadores %}
+<div class="col-md-4">{{ ui.indicador("Municipios de residencia", indicadores.municipios, "De " ~ indicadores.departamentos ~ (" departamento · " if indicadores.departamentos == 1 else " departamentos · ") ~ (total_registros | miles) ~ " nacimientos", "bi-geo-alt") }}</div>
+<div class="col-md-4">{{ ui.indicador("Territorio con más registros", indicadores.pct_principal ~ (" %" if total_registros else ""), indicadores.principal ~ " (participación sobre el total)", "bi-pin-map") }}</div>
+<div class="col-md-4">{{ ui.indicador("Madres de fuera de Santander", indicadores.pct_fuera ~ (" %" if total_registros else ""), (indicadores.fuera | miles) ~ " nacimientos de otros departamentos", "bi-sign-turn-right") }}</div>
+{% endblock %}
+
+{# ---------- Tres visualizaciones + tabla de participación ---------- #}
+{% block visualizaciones %}
+{% set interp = interpretaciones or {} %}
+<div class="col-lg-6">{{ ui.visualizacion("grafica1", "Nacimientos por municipio de residencia (10 principales)", interp.get("municipios", "")) }}</div>
+<div class="col-lg-6">{{ ui.visualizacion("grafica2", "Comunas de Bucaramanga (% de los nacimientos de la ciudad)", interp.get("comunas", "")) }}</div>
+<div class="col-12">{{ ui.visualizacion("grafica3", "Diferencias entre municipios (municipios con " ~ minimo_comparacion ~ " o más registros)", interp.get("comparacion", "")) }}</div>
+
+<div class="col-12">
+    <div class="card shadow-sm">
+        <div class="card-header bg-white fw-semibold">Participación porcentual de cada territorio</div>
+        <div class="table-responsive tabla-desplazable">
+            <table class="table table-sm table-hover align-middle mb-0">
+                <thead class="table-light sticky-top">
+                    <tr>
+                        <th>#</th><th>Municipio</th><th>Departamento</th>
+                        <th class="text-end">Nacimientos</th><th class="text-end">%</th><th class="text-end">% acumulado</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for f in tabla_municipios %}
+                    <tr>
+                        <td class="text-muted">{{ loop.index }}</td>
+                        <td class="fw-semibold">{{ f.municipio }}</td>
+                        <td>{{ f.departamento }}</td>
+                        <td class="text-end">{{ f.registros }}</td>
+                        <td class="text-end">{{ f.pct }}</td>
+                        <td class="text-end">{{ f.acumulado }}</td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="6" class="text-muted">Sin datos para los filtros seleccionados.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <div class="card-footer bg-white small text-muted">
+            Ordenado de mayor a menor. Los últimos municipios son los territorios con menos registros.
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{# ---------- Tres conocimientos evidentes (texto generado en routes/territorial.py) ---------- #}
+{% block conocimientos %}
+{% for c in conocimientos %}
+<div class="col-lg-4">{{ ui.conocimiento(loop.index, c) }}</div>
+{% endfor %}
+{% endblock %}
+
+{# ---------- Limitación y decisión ---------- #}
+{% block limitacion %}<p class="mb-0">{{ limitacion }}</p>{% endblock %}
+{% block decision %}<p class="mb-0">{{ decision }}</p>{% endblock %}
+
+{# ---------- Gráficas con Chart.js (datos calculados en routes/territorial.py) ---------- #}
+{% block graficas %}
+<script>
+const municipios = JSON.parse('{{ g_municipios | tojson | safe }}');
+const comunas = JSON.parse('{{ g_comunas | tojson | safe }}');
+const comparacion = JSON.parse('{{ g_comparacion | tojson | safe }}');
+const num = (n) => n.toLocaleString("es-CO");
+
+// 1. Barras horizontales: municipios con más registros
+new Chart(document.getElementById("grafica1"), {
+    type: "bar",
+    data: {
+        labels: municipios.etiquetas,
+        datasets: [{
+            data: municipios.porcentajes,
+            // Bucaramanga en el color principal y el resto en un tono suave
+            backgroundColor: municipios.etiquetas.map((_, i) => i === 0 ? PALETA[0] : PALETA[5])
+        }]
+    },
+    options: {
+        indexAxis: "y",
+        plugins: {
+            legend: { display: false },
+            tooltip: { callbacks: { label: (c) => ` ${num(c.parsed.x)} % (${num(municipios.valores[c.dataIndex])} nacimientos)` } }
+        },
+        scales: { x: { beginAtZero: true, ticks: { callback: (v) => v + " %" } } }
+    }
+});
+
+// 2. Barras horizontales: comunas de Bucaramanga
+new Chart(document.getElementById("grafica2"), {
+    type: "bar",
+    data: {
+        labels: comunas.etiquetas,
+        datasets: [{ data: comunas.porcentajes, backgroundColor: PALETA[2] }]
+    },
+    options: {
+        indexAxis: "y",
+        plugins: {
+            legend: { display: false },
+            tooltip: { callbacks: { label: (c) => ` ${num(c.parsed.x)} % (${num(comunas.valores[c.dataIndex])} nacimientos)` } }
+        },
+        scales: {
+            x: { beginAtZero: true, ticks: { callback: (v) => v + " %" } },
+            y: { ticks: { autoSkip: false, font: { size: 11 } } }
+        }
+    }
+});
+
+// 3. Barras agrupadas: características por municipio
+new Chart(document.getElementById("grafica3"), {
+    type: "bar",
+    data: {
+        labels: comparacion.etiquetas,
+        datasets: [
+            { label: "% cesárea", data: comparacion.cesarea, backgroundColor: PALETA[0] },
+            { label: "% madres no aseguradas", data: comparacion.no_asegurado, backgroundColor: PALETA[1] },
+            { label: "% residencia rural o centro poblado", data: comparacion.rural, backgroundColor: PALETA[3] }
+        ]
+    },
+    options: {
+        plugins: {
+            tooltip: {
+                callbacks: {
+                    label: (c) => ` ${c.dataset.label}: ${num(c.parsed.y)} %`,
+                    footer: (items) => `${num(comparacion.registros[items[0].dataIndex])} nacimientos en el municipio`
+                }
+            }
+        },
+        scales: {
+            x: { grid: { display: false } },
+            y: { beginAtZero: true, max: 100, ticks: { callback: (v) => v + " %" } }
+        }
+    }
+});
+</script>
+{% endblock %}
