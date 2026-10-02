@@ -1,7 +1,183 @@
 {#
-    Tablero de la dimensión multivariada (Integrante 4).
-    Hereda la estructura de _estructura.html; solo hay que reemplazar los
-    bloques: variables, filtros, indicadores, visualizaciones, conocimientos,
-    limitacion, decision y graficas (JavaScript de Chart.js).
+    Tablero de la dimensión relacional y multivariada (Integrante 4).
+    Hereda la estructura de _estructura.html y reemplaza los bloques:
+    variables, filtros, indicadores, visualizaciones, conocimientos,
+    limitacion, decision y graficas.
 #}
 {% extends "dimensiones/_estructura.html" %}
+
+{# ---------- Descripción de las variables utilizadas ---------- #}
+{% block variables %}
+<div class="card shadow-sm">
+    <div class="table-responsive">
+        <table class="table table-sm align-middle mb-0">
+            <thead class="table-light">
+                <tr><th>Variable</th><th>Columna</th><th>Tipo</th><th>Descripción</th></tr>
+            </thead>
+            <tbody>
+                {% for v in variables %}
+                <tr>
+                    <td class="fw-semibold">{{ v.nombre }}</td>
+                    <td><code>{{ v.columna }}</code></td>
+                    <td><span class="badge tipo-{{ v.tipo | lower }}">{{ v.tipo }}</span></td>
+                    <td>{{ v.descripcion }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <div class="card-footer bg-white small text-muted">
+        Variables derivadas: <strong>bajo peso</strong> (peso menor de 2.500 g), <strong>prematuro</strong>
+        (menos de 37 semanas de gestación; se excluyen los valores 0 o vacíos) y <strong>grupo de controles</strong>
+        (sin controles, 1 a 3, 4 a 6, 7 o más).
+    </div>
+</div>
+{% endblock %}
+
+{# ---------- Dos filtros interactivos: institución y área de residencia ---------- #}
+{% block filtros %}
+<form method="get" class="card shadow-sm border-0 filtro-auto">
+    <div class="card-body">
+        <div class="row g-3 align-items-end justify-content-start">
+            <div class="col-12 col-md-5 col-xl-4">
+                <label for="institucion" class="form-label small fw-semibold text-secondary mb-1">
+                    <i class="bi bi-hospital me-1"></i>Institución
+                </label>
+                <select id="institucion" name="institucion" class="form-select">
+                    <option value="">Todas las instituciones</option>
+                    {% for i in instituciones %}
+                    <option value="{{ i }}" {{ "selected" if institucion_sel == i }}>{{ i | title | replace(" Del ", " del ") }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-12 col-md-5 col-xl-4">
+                <label for="area" class="form-label small fw-semibold text-secondary mb-1">
+                    <i class="bi bi-geo-alt me-1"></i>Área de residencia de la madre
+                </label>
+                <select id="area" name="area" class="form-select">
+                    <option value="">Todas las áreas</option>
+                    {% for a in areas %}
+                    <option value="{{ a }}" {{ "selected" if area_sel == a }}>{{ a | capitalize }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-12 col-md-auto">
+                <a href="{{ url_for('multivariada.index') }}" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-counterclockwise me-1"></i>Limpiar filtros
+                </a>
+            </div>
+        </div>
+    </div>
+</form>
+{% if total_registros == 0 %}
+<div class="alert alert-warning mt-3 mb-0">
+    <i class="bi bi-exclamation-circle me-1"></i>No hay registros con la combinación de filtros seleccionada.
+</div>
+{% endif %}
+{% endblock %}
+
+{# ---------- Tres indicadores ---------- #}
+{% block indicadores %}
+{% if total_registros %}
+<div class="col-md-4">{{ ui.indicador("Cesáreas", indicadores.pct_cesarea ~ " %", "Porcentaje de partos por cesárea (" ~ (total_registros | miles) ~ " nacimientos)", "bi-hospital") }}</div>
+<div class="col-md-4">{{ ui.indicador("Controles de madres no aseguradas", indicadores.controles_no_aseg ~ " controles", "Promedio; madres aseguradas: " ~ indicadores.controles_aseg, "bi-clipboard2-pulse") }}</div>
+<div class="col-md-4">{{ ui.indicador("Madres con menos de 4 controles", indicadores.pct_pocos_controles ~ " %", (indicadores.n_pocos_controles | miles) ~ " nacimientos con 0 a 3 controles prenatales", "bi-exclamation-diamond") }}</div>
+{% else %}
+<div class="col-md-4">{{ ui.indicador("Cesáreas", "—", "Sin datos", "bi-hospital") }}</div>
+<div class="col-md-4">{{ ui.indicador("Controles de madres no aseguradas", "—", "Sin datos", "bi-clipboard2-pulse") }}</div>
+<div class="col-md-4">{{ ui.indicador("Madres con menos de 4 controles", "—", "Sin datos", "bi-exclamation-diamond") }}</div>
+{% endif %}
+{% endblock %}
+
+{# ---------- Tres visualizaciones ---------- #}
+{% block visualizaciones %}
+{% set interp = interpretaciones or {} %}
+<div class="col-lg-6">{{ ui.visualizacion("grafica1", "Controles prenatales según régimen de salud y etapa de vida de la madre", interp.get("controles", "")) }}</div>
+<div class="col-lg-6">{{ ui.visualizacion("grafica2", "% de cesáreas por año y etapa de vida de la madre", interp.get("cesareas", "")) }}</div>
+<div class="col-12">{{ ui.visualizacion("grafica3", "Bajo peso y prematuridad según el número de controles prenatales (%)", interp.get("resultados", "")) }}</div>
+{% endblock %}
+
+{# ---------- Tres conocimientos evidentes (texto generado en routes/multivariada.py) ---------- #}
+{% block conocimientos %}
+{% for c in conocimientos %}
+<div class="col-lg-4">{{ ui.conocimiento(loop.index, c) }}</div>
+{% endfor %}
+{% endblock %}
+
+{# ---------- Limitación y decisión ---------- #}
+{% block limitacion %}<p class="mb-0">{{ limitacion }}</p>{% endblock %}
+{% block decision %}<p class="mb-0">{{ decision }}</p>{% endblock %}
+
+{# ---------- Gráficas con Chart.js (datos calculados en routes/multivariada.py) ---------- #}
+{% block graficas %}
+{% if g_controles %}
+<script>
+const controles = JSON.parse('{{ g_controles | tojson | safe }}');
+const cesareas = JSON.parse('{{ g_cesareas | tojson | safe }}');
+const resultados = JSON.parse('{{ g_resultados | tojson | safe }}');
+const num = (n) => n === null ? "sin datos" : n.toLocaleString("es-CO");
+
+// 1. Barras agrupadas: promedio de controles por régimen y etapa de vida
+new Chart(document.getElementById("grafica1"), {
+    type: "bar",
+    data: {
+        labels: controles.etiquetas,
+        datasets: controles.series.map((s, i) => ({
+            label: s.nombre, data: s.valores, backgroundColor: PALETA[[0, 3, 1][i]]
+        }))
+    },
+    options: {
+        plugins: {
+            tooltip: { callbacks: { label: (c) => ` ${c.dataset.label}: ${num(c.parsed.y)} controles (${num(controles.series[c.datasetIndex].n[c.dataIndex])} nacimientos)` } }
+        },
+        scales: {
+            x: { title: { display: true, text: "Régimen de salud" }, grid: { display: false } },
+            y: { title: { display: true, text: "Promedio de controles prenatales" }, beginAtZero: true }
+        }
+    }
+});
+
+// 2. Líneas: % de cesáreas por año, una línea por etapa de vida
+new Chart(document.getElementById("grafica2"), {
+    type: "line",
+    data: {
+        labels: cesareas.etiquetas,
+        datasets: cesareas.series.map((s, i) => ({
+            label: s.nombre, data: s.valores, borderColor: PALETA[[0, 3, 1][i]],
+            backgroundColor: PALETA[[0, 3, 1][i]], tension: 0.25, spanGaps: true
+        }))
+    },
+    options: {
+        plugins: {
+            tooltip: { callbacks: { label: (c) => ` ${c.dataset.label}: ${num(c.parsed.y)} % (${num(cesareas.series[c.datasetIndex].n[c.dataIndex])} nacimientos)` } }
+        },
+        scales: {
+            x: { title: { display: true, text: "Año de reporte" }, grid: { display: false } },
+            y: { title: { display: true, text: "% de partos por cesárea" }, beginAtZero: true, ticks: { callback: (v) => v + " %" } }
+        }
+    }
+});
+
+// 3. Barras agrupadas: bajo peso y prematuridad según controles prenatales
+new Chart(document.getElementById("grafica3"), {
+    type: "bar",
+    data: {
+        labels: resultados.etiquetas.map((e, i) => `${e} (n=${num(resultados.n[i])})`),
+        datasets: [
+            { label: "Bajo peso (< 2.500 g)", data: resultados.bajo_peso, backgroundColor: PALETA[1] },
+            { label: "Prematuro (< 37 semanas)", data: resultados.prematuro, backgroundColor: PALETA[2] }
+        ]
+    },
+    options: {
+        plugins: {
+            tooltip: { callbacks: { label: (c) => ` ${c.dataset.label}: ${num(c.parsed.y)} %` } }
+        },
+        scales: {
+            x: { title: { display: true, text: "Controles prenatales de la madre" }, grid: { display: false } },
+            y: { title: { display: true, text: "% de nacimientos" }, beginAtZero: true, ticks: { callback: (v) => v + " %" } }
+        }
+    }
+});
+</script>
+{% endif %}
+{% endblock %}
