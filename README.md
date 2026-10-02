@@ -186,6 +186,28 @@ Archivos: `routes/poblacional.py` (cálculos con pandas y textos del análisis) 
 
 Las cifras de los textos se calculan con los datos filtrados, así siempre coinciden con las gráficas.
 
+## Dimensión territorial (Integrante 2)
+
+Pregunta de análisis: *¿Cómo se distribuye la población y sus principales características entre los territorios disponibles?*
+
+Archivos: `routes/territorial.py` (cálculos con pandas y textos del análisis) y
+`templates/dimensiones/territorial.html` (tablero). Se ve en `/dimension/territorial`.
+
+| Elemento | Contenido |
+|---|---|
+| Filtros | Año de reporte y área de residencia |
+| Indicadores | Municipios de residencia, participación del territorio con más registros y % de madres de fuera de Santander |
+| Visualizaciones | Barras de los 10 municipios principales, barras de comunas de Bucaramanga y barras agrupadas con % de cesárea, % de no aseguradas y % de residencia rural por municipio |
+| Participación | Tabla con todos los municipios, su departamento, % y % acumulado |
+| Conocimientos evidentes | Concentración territorial, distribución por comunas y diferencias entre municipios |
+| Limitación y decisión | El territorio es la residencia de la madre en solo dos instituciones; propuesta de priorizar la comuna con más nacimientos y coordinar con los municipios vecinos |
+
+Notas sobre los datos territoriales:
+- La comuna se digita a mano. Se unifican las variantes (`MORRORRICO`, `MORORRICO` → `MORRORICO`, etc.)
+  y lo que no corresponde a una de las 17 comunas oficiales se agrupa en zona rural u otros barrios.
+- `CACHIRÁ` y `CÁCHIRA` son el mismo municipio y se cuentan juntos.
+- La comparación entre municipios solo incluye los que tienen 30 o más registros, para que los porcentajes sean estables.
+
 ## Flujo de trabajo en GitHub
 
 1. Actualizar `main`: `git checkout main && git pull`
