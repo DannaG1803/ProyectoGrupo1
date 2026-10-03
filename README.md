@@ -186,6 +186,21 @@ Archivos: `routes/poblacional.py` (cálculos con pandas y textos del análisis) 
 
 Las cifras de los textos se calculan con los datos filtrados, así siempre coinciden con las gráficas.
 
+## Dimensión relacional y multivariada (Integrante 4)
+
+Pregunta de análisis: *¿Qué diferencias o relaciones evidentes pueden identificarse al analizar conjuntamente tres o más variables?*
+
+Archivos: `routes/multivariada.py` y `templates/dimensiones/multivariada.html`. Se ve en `/dimension/multivariada`.
+
+| Elemento | Contenido |
+|---|---|
+| Filtros | Institución y área de residencia de la madre |
+| Indicadores | % de cesáreas, controles prenatales de madres no aseguradas y % de madres con menos de 4 controles |
+| Visualizaciones | Controles por régimen y etapa de vida, % de cesáreas por año y etapa de vida, bajo peso y prematuridad según controles |
+| Análisis complementario | (1) Matriz de correlación, (2) diferencias entre grupos, (3) cruce régimen x etapa de vida, (4) 10 combinaciones más frecuentes, (5) territorio y periodo, (6) casos inusuales |
+| Conocimientos evidentes | Brecha de controles por aseguramiento, cesáreas según edad, resultados al nacer según controles (con las 8 partes de la guía) |
+| Limitación y decisión | Asociación no es causalidad y composición de instituciones; ruta de captación temprana de gestantes no aseguradas |
+
 ## Flujo de trabajo en GitHub
 
 1. Actualizar `main`: `git checkout main && git pull`
